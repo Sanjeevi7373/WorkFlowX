@@ -118,3 +118,28 @@ npm run build
 ```bash
 npm run lint
 ```
+
+## Deploying the frontend to Vercel
+
+Vercel hosts this React frontend only. Login and registration also need the Spring Boot API and its MySQL database running on publicly reachable hosting; `localhost` points to the visitor's computer after deployment.
+
+In Vercel, set the project root to `workflowx-frontend`, then add this environment variable under **Project Settings → Environment Variables**:
+
+| Name | Value |
+| --- | --- |
+| `VITE_API_BASE_URL` | `https://<your-public-backend-host>/api` |
+
+Use the actual HTTPS URL where the Spring Boot API is deployed. Redeploy after setting or changing this value because Vite embeds it at build time.
+
+Configure the backend hosting environment with:
+
+| Name | Value |
+| --- | --- |
+| `DB_URL` | JDBC URL for your hosted MySQL database, such as `jdbc:mysql://<host>:3306/workflowx` |
+| `DB_USERNAME` | Database username |
+| `DB_PASSWORD` | Database password |
+| `JWT_SECRET` | A private signing secret of at least 32 characters |
+| `CORS_ALLOWED_ORIGINS` | The exact Vercel site origin, such as `https://your-project.vercel.app` (no trailing slash). Comma-separate any additional preview origins. |
+| `FRONTEND_URL` | The exact Vercel site origin, used to build password-reset links |
+
+After setting those values, redeploy/restart the backend, then redeploy the Vercel frontend. Do not set `VITE_API_BASE_URL` to `localhost` in Vercel.

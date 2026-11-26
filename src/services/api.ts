@@ -14,6 +14,12 @@ export const getApiErrorMessage = (error: unknown, fallback: string): string => 
     if (error.response?.status === 401 || error.response?.status === 403) {
       return 'We could not sign you in. Check your email and password, then try again.';
     }
+    if (!error.response) {
+      return 'Could not reach the server. Check the API deployment and try again.';
+    }
+  }
+  if (error instanceof Error && error.message.includes('VITE_API_BASE_URL')) {
+    return 'The backend API is not configured. Set VITE_API_BASE_URL in Vercel, then redeploy.';
   }
   return fallback;
 };
@@ -22,7 +28,9 @@ export const getApiErrorMessage = (error: unknown, fallback: string): string => 
  * WorkFlowX API Service Client
  * Configured for Spring Boot REST API integration.
  */
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api';
+const configuredApiBaseUrl = import.meta.env.VITE_API_BASE_URL?.trim();
+const API_BASE_URL = configuredApiBaseUrl ||
+  (import.meta.env.DEV ? 'http://localhost:8080/api' : '');
 
 export const apiClient: AxiosInstance = axios.create({
   baseURL: API_BASE_URL,
@@ -36,6 +44,11 @@ export const apiClient: AxiosInstance = axios.create({
 // Request interceptor: Attach JWT authentication token
 apiClient.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
+    if (!API_BASE_URL) {
+      return Promise.reject(new Error(
+        'The backend API is not configured for this deployment. Set VITE_API_BASE_URL in Vercel and redeploy.'
+      ));
+    }
     const token = localStorage.getItem('workflowx_token');
     // Login and registration are public endpoints. A stale token from an old
     // session must not be allowed to affect these requests.

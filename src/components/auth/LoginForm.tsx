@@ -6,6 +6,7 @@ import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { Eye, EyeOff, Lock, Mail, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { useAuth } from '@/hooks/useAuth';
+import { getApiErrorMessage } from '@/services/api';
 
 // Zod validation schema
 const loginSchema = z.object({
@@ -50,9 +51,10 @@ export const LoginForm: React.FC = () => {
       await login({ email: data.email, password: data.password, rememberMe: data.rememberMe });
       navigate(from, { replace: true });
     } catch (err: unknown) {
-      const message =
-        err instanceof Error ? err.message : 'Invalid email or password.';
-      setAuthError(message);
+      setAuthError(getApiErrorMessage(
+        err,
+        'We could not sign you in. Check your email and password, then try again.'
+      ));
     }
   };
 

@@ -1,5 +1,23 @@
 import axios, { type AxiosInstance, type InternalAxiosRequestConfig, type AxiosResponse, AxiosError } from 'axios';
 
+export const getApiErrorMessage = (error: unknown, fallback: string): string => {
+  if (axios.isAxiosError(error)) {
+    const responseData = error.response?.data as
+      | { message?: unknown; detail?: unknown }
+      | string
+      | undefined;
+    if (typeof responseData === 'string' && responseData.trim()) return responseData;
+    if (responseData && typeof responseData === 'object') {
+      if (typeof responseData.message === 'string' && responseData.message.trim()) return responseData.message;
+      if (typeof responseData.detail === 'string' && responseData.detail.trim()) return responseData.detail;
+    }
+    if (error.response?.status === 401 || error.response?.status === 403) {
+      return 'We could not sign you in. Check your email and password, then try again.';
+    }
+  }
+  return fallback;
+};
+
 /**
  * WorkFlowX API Service Client
  * Configured for Spring Boot REST API integration.
@@ -19,8 +37,13 @@ export const apiClient: AxiosInstance = axios.create({
 apiClient.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
     const token = localStorage.getItem('workflowx_token');
-    if (token && config.headers) {
+    // Login and registration are public endpoints. A stale token from an old
+    // session must not be allowed to affect these requests.
+    const isAuthRequest = config.url?.startsWith('/auth/');
+    if (token && config.headers && !isAuthRequest) {
       config.headers.Authorization = `Bearer ${token}`;
+    } else if (isAuthRequest) {
+      delete config.headers.Authorization;
     }
     return config;
   },

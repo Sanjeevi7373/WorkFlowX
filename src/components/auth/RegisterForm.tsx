@@ -7,6 +7,7 @@ import { Eye, EyeOff, Lock, Mail, User, Building, CheckCircle2, AlertCircle } fr
 import { Button } from '@/components/ui/Button';
 import { useAuth } from '@/hooks/useAuth';
 import type { UserRole } from '@/types';
+import { getApiErrorMessage } from '@/services/api';
 
 // Zod validation schema for registration
 const registerSchema = z
@@ -93,8 +94,11 @@ export const RegisterForm: React.FC = () => {
         password: data.password,
       });
       setIsSuccess(true);
-    } catch {
-      setAuthError('Registration failed. Please check your information and try again.');
+    } catch (error: unknown) {
+      setAuthError(getApiErrorMessage(
+        error,
+        'We could not create your account. Please try again.'
+      ));
     }
   };
 
